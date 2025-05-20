@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<title>心理測驗網頁版</title>
+<style>
+  body {
+    margin: 0; background: #222; display: flex; justify-content: center; align-items: center; height: 100vh;
+    font-family: Arial, sans-serif; color: white;
+  }
+  #quiz-container {
+    position: relative; width: 600px; height: 500px; user-select: none;
+  }
+  #quiz-image {
+    width: 600px; height: 500px; display: block;
+  }
+  #flash-overlay {
+    position: absolute; top: 0; left: 0; width: 600px; height: 500px;
+    background: white; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+</style>
+</head>
+<body>
+
+<div id="quiz-container">
+  <img id="quiz-image" src="intro.png" alt="Intro" />
+  <div id="flash-overlay"></div>
+</div>
+
+<audio id="bg-music" src="background_music.mp3" loop></audio>
+
+<script>
+  const questions = [
+    { image: "2.png", A_area: {x1:180,y1:285,x2:420,y2:325}, B_area: null },
+    { image: "3.png", A_area: {x1:50,y1:300,x2:550,y2:342}, B_area: {x1:50,y1:370,x2:550,y2:410} },
+    { image: "4.png", A_area: {x1:50,y1:300,x2:550,y2:342}, B_area: {x1:50,y1:370,x2:550,y2:410} },
+    { image: "5.png", A_area: {x1:50,y1:300,x2:550,y2:342}, B_area: {x1:50,y1:370,x2:550,y2:410} },
+    { image: "6.png", A_area: {x1:50,y1:300,x2:550,y2:342}, B_area: {x1:50,y1:370,x2:550,y2:410} },
+    { image: "7.png", A_area: {x1:50,y1:300,x2:550,y2:342}, B_area: {x1:50,y1:370,x2:550,y2:410} },
+  ];
+
+  const result_images = {
+    "Aurora": "aurora.png",
+    "Nebula": "nebula.png",
+    "Cumulus": "cumulus.png"
+  };
+
+  let currentIndex = 0;
+  let answers = [];
+  let started = false;
+
+  const quizImage = document.getElementById('quiz-image');
+  const flashOverlay = document.getElementById('flash-overlay');
+  const bgMusic = document.getElementById('bg-music');
+  const quizContainer = document.getElementById('quiz-container');
+
+  function playMusic() {
+    bgMusic.play().catch(() => {
+      // 有些瀏覽器限制自動播放，必須用者互動後才能播放
+      console.log("點擊後開始播放音樂");
+    });
+  }
+
+  function showQuestion() {
+    if (currentIndex >= questions.length) {
+      showResult();
+      return;
+    }
+    quizImage.src = questions[currentIndex].image;
+  }
+
+  function inArea(area, x, y) {
+    if (!area) return false;
+    return x >= area.x1 && x <= area.x2 && y >= area.y1 && y <= area.y2;
+  }
+
+  function flashArea(area, callback) {
+    const overlay = document.createElement('div');
+    overlay.style.position = 'absolute';
+    overlay.style.left = (area.x1 + 19) + 'px';
+    overlay.style.top = (area.y1 + 5) + 'px';
+    overlay.style.width = (area.x2 - area.x1 - 37) + 'px'; // 左右扣掉19 + 18
+    overlay.style.height = (area.y2 - area.y1 + 3) + 'px';
+    overlay.style.backgroundColor = 'white';
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'none';
+    quizContainer.appendChild(overlay);
+
+    let flashes = 6;
+    let count = 0;
+    let visible = true;
+    let interval = setInterval(() => {
+      visible = !visible;
+      overlay.style.opacity = visible ? '1' : '0';
+      count++;
+      if (count >= flashes) {
+        clearInterval(interval);
+        quizContainer.removeChild(overlay);
+        if (callback) callback();
+      }
+    }, 100);
+  }
+
+  function flashFullScreen(callback) {
+    flashOverlay.style.opacity = '0';
+    flashOverlay.style.pointerEvents = 'auto';
+    let alpha = 0;
+    let fadeIn = true;
+
+    function step() {
+      if (fadeIn) {
+        alpha += 0.12;
+        if (alpha >= 1) {
+          alpha = 1;
+          fadeIn = false;
+          setTimeout(step, 100);
+          flashOverlay.style.opacity = alpha;
+          return;
+        }
+      } else {
+        alpha -= 0.12;
+        if (alpha <= 0) {
+          alpha = 0;
+          flashOverlay.style.opacity = alpha;
+          flashOverlay.style.pointerEvents = 'none';
+          if (callback) callback();
+          return;
+        }
+      }
+      flashOverlay.style.opacity = alpha;
+      setTimeout(step, 30);
+    }
+    step();
+  }
+
+  quizContainer.addEventListener('click', (e) => {
+    const rect = quizContainer.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (!started) return;
+
+    const q = questions[currentIndex];
+
+    if (currentIndex === 0) {
+      if (inArea(q.A_area, x, y)) {
+        flashFullScreen(() => {
+          currentIndex++;
+          showQuestion();
+        });
+      }
+    } else {
+      if (inArea(q.A_area, x, y)) {
+        answers.push("A");
+        flashArea(q.A_area, () => {
+          currentIndex++;
+          showQuestion();
+        });
+      } else if (inArea(q.B_area, x, y)) {
+        answers.push("B");
+        flashArea(q.B_area, () => {
+          currentIndex++;
+          showQuestion();
+        });
+      }
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !started) {
+      started = true;
+      currentIndex = 0;
+      answers = [];
+      playMusic();
+      showQuestion();
+    }
+  });
+
+  function showResult() {
+    let countA = answers.filter(a => a === "A").length;
+    let resultImg = "";
+    if (countA > 3 && countA <= 5) {
+      resultImg = result_images["Aurora"];
+    } else if (countA === 3) {
+      resultImg = result_images["Nebula"];
+    } else {
+      resultImg = result_images["Cumulus"];
+    }
+    quizImage.src = resultImg;
+    flashOverlay.style.opacity = '0';
+    flashOverlay.style.pointerEvents = 'none';
+  }
+
+  // 初始畫面就是 intro.png
+  quizImage.src = "intro.png";
+
+  // 提示使用者按 Enter 開始
+  alert("按 Enter 鍵開始心理測驗，點擊圖片選擇答案。");
+</script>
+
+</body>
+</html>
