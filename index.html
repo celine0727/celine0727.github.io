@@ -98,7 +98,6 @@
         if (count < times * 2) {
           setTimeout(draw, duration);
         } else {
-          showQuestion();
           if (callback) callback();
         }
       };
@@ -128,43 +127,9 @@
         answers.push("A");
         flashRect(q.A[0], q.A[1], q.A[2], q.A[3], 3, () => {
           currentIndex++;
+          showQuestion(); // ← 加上這行
         });
       } else if (pointInRect(x, y, q.B)) {
         answers.push("B");
         flashRect(q.B[0], q.B[1], q.B[2], q.B[3], 3, () => {
-          currentIndex++;
-        });
-      }
-    });
-
-    function fadeScreen(callback) {
-      let alpha = 0;
-      const fadeIn = () => {
-        alpha += 0.1;
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        if (alpha < 1) {
-          requestAnimationFrame(fadeIn);
-        } else {
-          setTimeout(() => {
-            fadeOut();
-          }, 100);
-        }
-      };
-      const fadeOut = () => {
-        alpha -= 0.1;
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        if (alpha > 0) {
-          requestAnimationFrame(fadeOut);
-        } else {
-          callback();
-        }
-      };
-      fadeIn();
-    }
-
-    drawImage("intro.png");
-  </script>
-</body>
-</html>
+          current
