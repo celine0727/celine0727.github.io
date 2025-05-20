@@ -1,203 +1,170 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8" />
-<title>心理測驗網頁版</title>
-<style>
-  body {
-    margin: 0; background: #222; display: flex; justify-content: center; align-items: center; height: 100vh;
-    font-family: Arial, sans-serif; color: white;
-  }
-  #quiz-container {
-    position: relative; width: 600px; height: 500px; user-select: none;
-  }
-  #quiz-image {
-    width: 600px; height: 500px; display: block;
-  }
-  #flash-overlay {
-    position: absolute; top: 0; left: 0; width: 600px; height: 500px;
-    background: white; opacity: 0; pointer-events: none;
-    transition: opacity 0.2s ease;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>心理測驗</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+    }
+  </style>
 </head>
 <body>
+  <canvas id="quizCanvas" width="600" height="500"></canvas>
+  <audio id="bgMusic" src="background_music.mp3" loop></audio>
 
-<div id="quiz-container">
-  <img id="quiz-image" src="intro.png" alt="Intro" />
-  <div id="flash-overlay"></div>
-</div>
+  <script>
+    const canvas = document.getElementById("quizCanvas");
+    const ctx = canvas.getContext("2d");
+    const bgMusic = document.getElementById("bgMusic");
 
-<audio id="bg-music" src="background_music.mp3" loop></audio>
+    let currentIndex = 0;
+    let started = false;
+    let answers = [];
 
-<script>
-  const questions = [
-    { image: "2.png", A_area: {x1:180,y1:285,x2:420,y2:325}, B_area: null },
-    { image: "3.png", A_area: {x1:50,y1:300,x2:550,y2:342}, B_area: {x1:50,y1:370,x2:550,y2:410} },
-    { image: "4.png", A_area: {x1:50,y1:300,x2:550,y2:342}, B_area: {x1:50,y1:370,x2:550,y2:410} },
-    { image: "5.png", A_area: {x1:50,y1:300,x2:550,y2:342}, B_area: {x1:50,y1:370,x2:550,y2:410} },
-    { image: "6.png", A_area: {x1:50,y1:300,x2:550,y2:342}, B_area: {x1:50,y1:370,x2:550,y2:410} },
-    { image: "7.png", A_area: {x1:50,y1:300,x2:550,y2:342}, B_area: {x1:50,y1:370,x2:550,y2:410} },
-  ];
+    const images = {};
+    const questionData = [
+      { image: "2.png", A: [180, 285, 420, 325], B: null },
+      { image: "3.png", A: [50, 300, 550, 342], B: [50, 370, 550, 410] },
+      { image: "4.png", A: [50, 300, 550, 342], B: [50, 370, 550, 410] },
+      { image: "5.png", A: [50, 300, 550, 342], B: [50, 370, 550, 410] },
+      { image: "6.png", A: [50, 300, 550, 342], B: [50, 370, 550, 410] },
+      { image: "7.png", A: [50, 300, 550, 342], B: [50, 370, 550, 410] }
+    ];
 
-  const result_images = {
-    "Aurora": "aurora.png",
-    "Nebula": "nebula.png",
-    "Cumulus": "cumulus.png"
-  };
+    const results = {
+      Aurora: "aurora.png",
+      Nebula: "nebula.png",
+      Cumulus: "cumulus.png"
+    };
 
-  let currentIndex = 0;
-  let answers = [];
-  let started = false;
-
-  const quizImage = document.getElementById('quiz-image');
-  const flashOverlay = document.getElementById('flash-overlay');
-  const bgMusic = document.getElementById('bg-music');
-  const quizContainer = document.getElementById('quiz-container');
-
-  function playMusic() {
-    bgMusic.play().catch(() => {
-      // 有些瀏覽器限制自動播放，必須用者互動後才能播放
-      console.log("點擊後開始播放音樂");
-    });
-  }
-
-  function showQuestion() {
-    if (currentIndex >= questions.length) {
-      showResult();
-      return;
-    }
-    quizImage.src = questions[currentIndex].image;
-  }
-
-  function inArea(area, x, y) {
-    if (!area) return false;
-    return x >= area.x1 && x <= area.x2 && y >= area.y1 && y <= area.y2;
-  }
-
-  function flashArea(area, callback) {
-    const overlay = document.createElement('div');
-    overlay.style.position = 'absolute';
-    overlay.style.left = (area.x1 + 19) + 'px';
-    overlay.style.top = (area.y1 + 5) + 'px';
-    overlay.style.width = (area.x2 - area.x1 - 37) + 'px'; // 左右扣掉19 + 18
-    overlay.style.height = (area.y2 - area.y1 + 3) + 'px';
-    overlay.style.backgroundColor = 'white';
-    overlay.style.opacity = '1';
-    overlay.style.pointerEvents = 'none';
-    quizContainer.appendChild(overlay);
-
-    let flashes = 6;
-    let count = 0;
-    let visible = true;
-    let interval = setInterval(() => {
-      visible = !visible;
-      overlay.style.opacity = visible ? '1' : '0';
-      count++;
-      if (count >= flashes) {
-        clearInterval(interval);
-        quizContainer.removeChild(overlay);
-        if (callback) callback();
-      }
-    }, 100);
-  }
-
-  function flashFullScreen(callback) {
-    flashOverlay.style.opacity = '0';
-    flashOverlay.style.pointerEvents = 'auto';
-    let alpha = 0;
-    let fadeIn = true;
-
-    function step() {
-      if (fadeIn) {
-        alpha += 0.12;
-        if (alpha >= 1) {
-          alpha = 1;
-          fadeIn = false;
-          setTimeout(step, 100);
-          flashOverlay.style.opacity = alpha;
-          return;
-        }
+    function loadImage(src, callback) {
+      if (images[src]) {
+        callback(images[src]);
       } else {
-        alpha -= 0.12;
-        if (alpha <= 0) {
-          alpha = 0;
-          flashOverlay.style.opacity = alpha;
-          flashOverlay.style.pointerEvents = 'none';
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+          images[src] = img;
+          callback(img);
+        };
+      }
+    }
+
+    function drawImage(src) {
+      loadImage(src, (img) => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      });
+    }
+
+    function showQuestion() {
+      if (currentIndex >= questionData.length) {
+        showResult();
+        return;
+      }
+      drawImage(questionData[currentIndex].image);
+    }
+
+    function showResult() {
+      const countA = answers.filter(a => a === "A").length;
+      let resultImg;
+      if (countA > 3) resultImg = results.Aurora;
+      else if (countA === 3) resultImg = results.Nebula;
+      else resultImg = results.Cumulus;
+      drawImage(resultImg);
+    }
+
+    function pointInRect(x, y, rect) {
+      if (!rect) return false;
+      const [x1, y1, x2, y2] = rect;
+      return x >= x1 && x <= x2 && y >= y1 && y <= y2;
+    }
+
+    function flashRect(x1, y1, x2, y2, times, callback) {
+      let count = 0;
+      const duration = 100;
+      const draw = () => {
+        ctx.fillStyle = count % 2 === 0 ? "white" : "transparent";
+        ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+        count++;
+        if (count < times * 2) {
+          setTimeout(draw, duration);
+        } else {
+          showQuestion();
           if (callback) callback();
-          return;
         }
-      }
-      flashOverlay.style.opacity = alpha;
-      setTimeout(step, 30);
+      };
+      draw();
     }
-    step();
-  }
 
-  quizContainer.addEventListener('click', (e) => {
-    const rect = quizContainer.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    canvas.addEventListener("click", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-    if (!started) return;
+      if (!started) {
+        started = true;
+        bgMusic.play();
+        showQuestion();
+        return;
+      }
 
-    const q = questions[currentIndex];
+      const q = questionData[currentIndex];
 
-    if (currentIndex === 0) {
-      if (inArea(q.A_area, x, y)) {
-        flashFullScreen(() => {
+      if (currentIndex === 0 && pointInRect(x, y, q.A)) {
+        fadeScreen(() => {
           currentIndex++;
           showQuestion();
         });
-      }
-    } else {
-      if (inArea(q.A_area, x, y)) {
+      } else if (pointInRect(x, y, q.A)) {
         answers.push("A");
-        flashArea(q.A_area, () => {
+        flashRect(q.A[0], q.A[1], q.A[2], q.A[3], 3, () => {
           currentIndex++;
-          showQuestion();
         });
-      } else if (inArea(q.B_area, x, y)) {
+      } else if (pointInRect(x, y, q.B)) {
         answers.push("B");
-        flashArea(q.B_area, () => {
+        flashRect(q.B[0], q.B[1], q.B[2], q.B[3], 3, () => {
           currentIndex++;
-          showQuestion();
         });
       }
+    });
+
+    function fadeScreen(callback) {
+      let alpha = 0;
+      const fadeIn = () => {
+        alpha += 0.1;
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (alpha < 1) {
+          requestAnimationFrame(fadeIn);
+        } else {
+          setTimeout(() => {
+            fadeOut();
+          }, 100);
+        }
+      };
+      const fadeOut = () => {
+        alpha -= 0.1;
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (alpha > 0) {
+          requestAnimationFrame(fadeOut);
+        } else {
+          callback();
+        }
+      };
+      fadeIn();
     }
-  });
 
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !started) {
-      started = true;
-      currentIndex = 0;
-      answers = [];
-      playMusic();
-      showQuestion();
-    }
-  });
-
-  function showResult() {
-    let countA = answers.filter(a => a === "A").length;
-    let resultImg = "";
-    if (countA > 3 && countA <= 5) {
-      resultImg = result_images["Aurora"];
-    } else if (countA === 3) {
-      resultImg = result_images["Nebula"];
-    } else {
-      resultImg = result_images["Cumulus"];
-    }
-    quizImage.src = resultImg;
-    flashOverlay.style.opacity = '0';
-    flashOverlay.style.pointerEvents = 'none';
-  }
-
-  // 初始畫面就是 intro.png
-  quizImage.src = "intro.png";
-
-  // 提示使用者按 Enter 開始
-  alert("按 Enter 鍵開始心理測驗，點擊圖片選擇答案。");
-</script>
-
+    drawImage("intro.png");
+  </script>
 </body>
 </html>
