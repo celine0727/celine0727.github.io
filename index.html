@@ -46,9 +46,10 @@
     ];
 
     const results = {
-      Aurora: "aurora.png",
-      Nebula: "nebula.png",
-      Cumulus: "cumulus.png"
+      Tom: "tom.png",
+      Laura: "laura.png",
+      Amanda: "amanda.png"
+      Jim: "jim.png"
     };
 
     function resizeCanvas() {
@@ -90,9 +91,10 @@
     function showResult() {
       const countA = answers.filter(a => a === "A").length;
       let resultImg;
-      if (countA > 3) resultImg = results.Aurora;
-      else if (countA === 3) resultImg = results.Nebula;
-      else resultImg = results.Cumulus;
+      if (countA >= 5) resultImg = results.Amanda;
+      else if (countA === 4) resultImg = results.Jim; // 新增角色
+      else if (countA >= 2) resultImg = results.Tom;
+      else resultImg = results.Laura;
       drawImage(resultImg);
     }
 
