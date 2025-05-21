@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>心理測驗</title>
   <style>
     body {
@@ -28,8 +28,8 @@
     let currentIndex = 0;
     let started = false;
     let answers = [];
-
     const images = {};
+
     const questionData = [
       { image: "2.png", A: [180, 285, 420, 325], B: null },
       { image: "3.png", A: [50, 300, 550, 342], B: [50, 370, 550, 410] },
@@ -66,7 +66,7 @@
     }
 
     function showQuestion() {
-      if (currentIndex > questionData.length) {
+      if (currentIndex >= questionData.length) {
         showResult();
         return;
       }
@@ -98,7 +98,6 @@
         if (count < times * 2) {
           setTimeout(draw, duration);
         } else {
-          showQuestion();
           if (callback) callback();
         }
       };
@@ -119,20 +118,27 @@
 
       const q = questionData[currentIndex];
 
+      // 第 1 題不閃爍，淡入淡出轉場
       if (currentIndex === 0 && pointInRect(x, y, q.A)) {
         fadeScreen(() => {
           currentIndex++;
           showQuestion();
         });
-      } else if (pointInRect(x, y, q.A)) {
+        return;
+      }
+
+      // 後續題目判斷 A 或 B 選項
+      if (pointInRect(x, y, q.A)) {
         answers.push("A");
         flashRect(q.A[0], q.A[1], q.A[2], q.A[3], 3, () => {
           currentIndex++;
+          showQuestion();
         });
       } else if (pointInRect(x, y, q.B)) {
         answers.push("B");
         flashRect(q.B[0], q.B[1], q.B[2], q.B[3], 3, () => {
           currentIndex++;
+          showQuestion();
         });
       }
     });
@@ -146,9 +152,7 @@
         if (alpha < 1) {
           requestAnimationFrame(fadeIn);
         } else {
-          setTimeout(() => {
-            fadeOut();
-          }, 100);
+          setTimeout(fadeOut, 100);
         }
       };
       const fadeOut = () => {
@@ -164,6 +168,7 @@
       fadeIn();
     }
 
+    // 初始畫面
     drawImage("intro.png");
   </script>
 </body>
