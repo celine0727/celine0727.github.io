@@ -99,9 +99,9 @@
       if (!rectPercent) return false;
       const [x1p, y1p, x2p, y2p] = rectPercent;
       const x1 = x1p * canvas.width ;
-      const y1 = y1p * canvas.height -200;
+      const y1 = y1p * canvas.height;
       const x2 = x2p * canvas.width;
-      const y2 = y2p * canvas.height -200;
+      const y2 = y2p * canvas.height;
       return x >= x1 && x <= x2 && y >= y1 && y <= y2;
     }
 
