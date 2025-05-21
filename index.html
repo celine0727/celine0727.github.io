@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>心理測驗</title>
   <style>
     body {
@@ -28,6 +28,7 @@
     let currentIndex = 0;
     let started = false;
     let answers = [];
+    let clickable = true;
 
     const images = {};
     const questionData = [
@@ -71,6 +72,7 @@
         return;
       }
       drawImage(questionData[currentIndex].image);
+      clickable = true;
     }
 
     function showResult() {
@@ -105,6 +107,7 @@
     }
 
     canvas.addEventListener("click", (e) => {
+      if (!clickable) return;
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -119,6 +122,7 @@
       const q = questionData[currentIndex];
 
       if (currentIndex === 0 && pointInRect(x, y, q.A)) {
+        clickable = false;
         fadeScreen(() => {
           currentIndex++;
           showQuestion();
@@ -127,12 +131,14 @@
       }
 
       if (pointInRect(x, y, q.A)) {
+        clickable = false;
         answers.push("A");
         flashRect(q.A[0], q.A[1], q.A[2], q.A[3], 3, () => {
           currentIndex++;
           showQuestion();
         });
       } else if (pointInRect(x, y, q.B)) {
+        clickable = false;
         answers.push("B");
         flashRect(q.B[0], q.B[1], q.B[2], q.B[3], 3, () => {
           currentIndex++;
