@@ -98,47 +98,44 @@
     function pointInRect(x, y, rectPercent) {
       if (!rectPercent) return false;
       const [x1p, y1p, x2p, y2p] = rectPercent;
-      const x1 = x1p * canvas.width ;
+      const x1 = x1p * canvas.width;
       const y1 = y1p * canvas.height;
       const x2 = x2p * canvas.width;
       const y2 = y2p * canvas.height;
       return x >= x1 && x <= x2 && y >= y1 && y <= y2;
     }
 
-function flashRect(x1p, y1p, x2p, y2p, times, callback) {
-  let count = 0;
-  const duration = 100;
-  const imgSrc = questionData[currentIndex].image;
+    function flashRect(x1p, y1p, x2p, y2p, times, callback) {
+      let count = 0;
+      const duration = 100;
+      const imgSrc = questionData[currentIndex].image;
 
-  const flash = () => {
-    // 重畫背景圖片
-    loadImage(imgSrc, (img) => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const flash = () => {
+        loadImage(imgSrc, (img) => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      // 計算實際區塊位置
-      const x1 = x1p * canvas.width;
-      const y1 = y1p * canvas.height;
-      const x2 = x2p * canvas.width;
-      const y2 = y2p * canvas.height;
+          const x1 = x1p * canvas.width;
+          const y1 = y1p * canvas.height;
+          const x2 = x2p * canvas.width;
+          const y2 = y2p * canvas.height;
 
-      if (count % 2 === 0) {
-        ctx.fillStyle = "rgba(255,255,255,0.5)";
-        ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
-      }
+          if (count % 2 === 0) {
+            ctx.fillStyle = "rgba(255,255,255,0.5)";
+            ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+          }
 
-      count++;
-      if (count < times * 2) {
-        setTimeout(flash, duration);
-      } else {
-        callback();
-      }
-    });
-  };
+          count++;
+          if (count < times * 2) {
+            setTimeout(flash, duration);
+          } else {
+            callback();
+          }
+        });
+      };
 
-  flash();
-}
-
+      flash();
+    }
 
     canvas.addEventListener("click", (e) => {
       if (!clickable) return;
