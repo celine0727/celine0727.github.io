@@ -26,7 +26,6 @@
   <script>
     const canvas = document.getElementById("quizCanvas");
     const ctx = canvas.getContext("2d");
-
     const bgMusic = document.getElementById("bgMusic");
 
     let currentIndex = 0;
@@ -108,7 +107,8 @@
     function flashRect(x1p, y1p, x2p, y2p, times, callback) {
       let count = 0;
       const duration = 100;
-      const imgSrc = questionData[currentIndex].image;
+      const q = questionData[currentIndex];
+      const imgSrc = q.image;
 
       const flash = () => {
         loadImage(imgSrc, (img) => {
@@ -139,9 +139,9 @@
 
     canvas.addEventListener("click", (e) => {
       if (!clickable) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+
+      const x = e.clientX;
+      const y = e.clientY;
 
       if (!started) {
         started = true;
@@ -194,18 +194,4 @@
       };
       const fadeOut = () => {
         alpha -= 0.1;
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        if (alpha > 0) {
-          requestAnimationFrame(fadeOut);
-        } else {
-          callback();
-        }
-      };
-      fadeIn();
-    }
-
-    drawImage("intro.png");
-  </script>
-</body>
-</html>
+        ctx.fillStyle = `rgba(255,255,255
